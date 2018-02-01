@@ -30,13 +30,16 @@ func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 
 	workerStats, ok := allWorkers[address]
 
-	if !ok {
-		return nil, &utils.ErrorWorkerNotFound
+	hashrate := 0.0
+	unpaid := 0.0
+
+	if ok {
+		hashrate = workerStats.Hashrate
+		unpaid = workerStats.Balance
 	}
 
 	shares := db.GetShares()
 
-	unpaid := 0.0
 	for _, block := range shares {
 		totalSatoshis := 0.0
 		workerSatoshis := 0.0
@@ -51,14 +54,18 @@ func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 		}
 	}
 
+	if unpaid == 0 && hashrate == 0 {
+		return nil, &utils.ErrorWorkerNotFound
+	}
+
 	workers := make(map[string]float64)
 
 	// TODO Temporary
-	workers["0"] = workerStats.Hashrate
+	workers["0"] = hashrate
 
 	return WorkerResponse{
 		Address:       address,
-		Hashrate:      workerStats.Hashrate,
+		Hashrate:      hashrate,
 		UnpaidBalance: unpaid,
 		Workers:       workers,
 	}, nil
