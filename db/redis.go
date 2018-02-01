@@ -17,9 +17,10 @@ var client *redis.Client
 
 func InitializeRedis(redisHost string, redisPort int, redisPassword string, redisDb int) {
 	client = redis.NewClient(&redis.Options{
-		Addr:     redisHost + ":" + strconv.Itoa(redisPort),
-		Password: redisPassword,
-		DB:       redisDb,
+		Addr:        redisHost + ":" + strconv.Itoa(redisPort),
+		Password:    redisPassword,
+		DB:          redisDb,
+		ReadTimeout: time.Second * 10,
 	})
 
 	_, err := client.Ping().Result()

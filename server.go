@@ -40,6 +40,7 @@ func Serve() {
 	router.NotFoundHandler = GoLib.LoggerHandler(GoLib.NotFoundHandler())
 
 	v1 := GoLib.RouteHandler(router, "/v1")
+	nodes.RegisterWorkerRoutes(v1)
 	nodes.RegisterEverythingRoutes(v1)
 
 	CORSHandler := handlers.CORS(
