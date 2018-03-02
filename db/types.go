@@ -13,6 +13,7 @@ type BlockData struct {
 }
 
 type Stats struct {
+	Time        int64                   `json:"time,omitempty"`
 	Workers     map[string]*WorkerStats `json:"workers,omitempty"`
 	PoolStats   PoolStats               `json:"poolStats"`
 	BlockStats  BlockStats              `json:"blocks"`

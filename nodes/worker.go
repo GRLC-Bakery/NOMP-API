@@ -17,23 +17,29 @@ func RegisterWorkerRoutes(router GoLib.RegisterRoute) {
 }
 
 type WorkerResponse struct {
-	Address       string             `json:"address"`
-	Hashrate      float64            `json:"hashrate"`
-	UnpaidBalance float64            `json:"unpaid_balance"`
-	Workers       map[string]float64 `json:"workers"`
+	Address       string                   `json:"address"`
+	Hashrate      float64                  `json:"hashrate"`
+	UnpaidBalance float64                  `json:"unpaid_balance"`
+	Workers       map[string]float64       `json:"workers"`
+	WorkerStats   map[string][]WorkerStats `json:"worker_stats"`
+}
+
+type WorkerStats struct {
+	Time          int64   `json:"time"`
+	Hashrate      float64 `json:"hashrate"`
+	ValidShares   float64 `json:"valid_shares"`
+	InvalidShares float64 `json:"invalid_shares"`
 }
 
 func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 	address := mux.Vars(r)["address"]
 
-	allWorkers := db.GetWorkers()
-
-	workerStats, ok := allWorkers[address]
+	workerStats := db.GetWorker(address)
 
 	hashrate := 0.0
 	unpaid := 0.0
 
-	if ok {
+	if workerStats != nil {
 		hashrate = workerStats.Hashrate
 		unpaid = workerStats.Balance
 	}
@@ -58,6 +64,18 @@ func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 		return nil, &utils.ErrorWorkerNotFound
 	}
 
+	stats := make(map[string][]WorkerStats)
+
+	for _, snapshot := range db.GetPoolStats() {
+		if data, ok := snapshot.Stats.Workers[address]; ok {
+			stats["0"] = append(stats["0"], WorkerStats{
+				Time:          snapshot.Time,
+				Hashrate:      data.Hashrate,
+				ValidShares:   data.ValidShares,
+				InvalidShares: data.InvalidShares,
+			})
+		}
+	}
 	workers := make(map[string]float64)
 
 	// TODO Temporary
@@ -68,5 +86,6 @@ func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 		Hashrate:      hashrate,
 		UnpaidBalance: unpaid,
 		Workers:       workers,
+		WorkerStats:   stats,
 	}, nil
 }

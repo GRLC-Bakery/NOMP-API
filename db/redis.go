@@ -38,6 +38,7 @@ func reloadLoop() {
 		ReloadStats()
 		ReloadPoolStats()
 		ReloadShares()
+		ReloadBalances()
 
 		time.Sleep(time.Second * 15)
 	}
@@ -59,13 +60,19 @@ func GetPending() []*Block {
 	return blocks
 }
 
+var balancesCache map[string]float64
+
 func GetBalances() map[string]float64 {
+	return balancesCache
+}
+
+func ReloadBalances() {
 	balances := client.HGetAll(utils.Coin + ":balances")
 	wallets := make(map[string]float64)
 	for wallet, balance := range balances.Val() {
 		wallets[wallet], _ = strconv.ParseFloat(balance, 64)
 	}
-	return wallets
+	balancesCache = wallets
 }
 
 var sharesCache map[int]map[string]float64
@@ -267,4 +274,21 @@ func GetWorkers() map[string]*WorkerStats {
 	}
 
 	return workers
+}
+
+func GetWorker(address string) *WorkerStats {
+	workers := GetStats().Workers
+	worker, ok := workers[address]
+
+	if !ok {
+		return nil
+	}
+
+	balances := GetBalances()
+
+	if _, ok := balances[address]; ok {
+		worker.Balance = balances[address]
+	}
+
+	return worker
 }
