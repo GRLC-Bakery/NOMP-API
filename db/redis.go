@@ -1,6 +1,7 @@
 package db
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -228,6 +229,7 @@ func statsToModel(validShares int, invalidShares int, validBlocks int, totalPaid
 			workers[split[1]] = &WorkerStats{
 				ValidShares:   0,
 				InvalidShares: 0,
+				Workers:       make(map[string]*CustomWorkerStats),
 			}
 		}
 
@@ -239,10 +241,31 @@ func statsToModel(validShares int, invalidShares int, validBlocks int, totalPaid
 		} else {
 			workerStats.InvalidShares += math.Abs(share)
 		}
+
+		if len(split) >= 4 {
+			customName, _ := base64.StdEncoding.DecodeString(split[3])
+
+			if _, ok := workerStats.Workers[string(customName)]; !ok {
+				workerStats.Workers[string(customName)] = &CustomWorkerStats{
+					ValidShares:   0,
+					InvalidShares: 0,
+				}
+			}
+
+			customWorker := workerStats.Workers[string(customName)]
+			if share > 0 {
+				customWorker.ValidShares += share
+			} else {
+				customWorker.InvalidShares += math.Abs(share)
+			}
+		}
 	}
 
 	for _, worker := range workers {
 		worker.Hashrate = float64(utils.HashrateMultiplier) * worker.ValidShares / float64(utils.HashrateWindow)
+		for _, customWorker := range worker.Workers {
+			customWorker.Hashrate = float64(utils.HashrateMultiplier) * customWorker.ValidShares / float64(utils.HashrateWindow)
+		}
 	}
 
 	return Stats{

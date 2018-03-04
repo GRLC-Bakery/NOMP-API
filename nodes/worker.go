@@ -68,18 +68,26 @@ func getWorker(r *http.Request) (interface{}, *GoLib.ErrorResponse) {
 
 	for _, snapshot := range db.GetPoolStats() {
 		if data, ok := snapshot.Stats.Workers[address]; ok {
-			stats["0"] = append(stats["0"], WorkerStats{
-				Time:          snapshot.Time,
-				Hashrate:      data.Hashrate,
-				ValidShares:   data.ValidShares,
-				InvalidShares: data.InvalidShares,
-			})
+			for name, worker := range data.Workers {
+				stats[name] = append(stats[name], WorkerStats{
+					Time:          snapshot.Time,
+					Hashrate:      worker.Hashrate,
+					ValidShares:   worker.ValidShares,
+					InvalidShares: worker.InvalidShares,
+				})
+			}
 		}
 	}
+
 	workers := make(map[string]float64)
 
-	// TODO Temporary
-	workers["0"] = hashrate
+	for name, worker := range workerStats.Workers {
+		workers[name] = worker.Hashrate
+	}
+
+	if len(workerStats.Workers) == 0 {
+		workers["Baker"] = hashrate
+	}
 
 	return WorkerResponse{
 		Address:       address,

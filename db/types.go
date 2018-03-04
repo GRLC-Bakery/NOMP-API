@@ -35,10 +35,17 @@ type BlockStats struct {
 }
 
 type WorkerStats struct {
+	ValidShares   float64                       `json:"shares"`
+	InvalidShares float64                       `json:"invalidshares"`
+	Hashrate      float64                       `json:"hashrate"`
+	Balance       float64                       `json:"balance"`
+	Workers       map[string]*CustomWorkerStats `json:"workers"`
+}
+
+type CustomWorkerStats struct {
 	ValidShares   float64 `json:"shares"`
 	InvalidShares float64 `json:"invalidshares"`
 	Hashrate      float64 `json:"hashrate"`
-	Balance       float64 `json:"balance"`
 }
 
 type PoolStatsHistory struct {
